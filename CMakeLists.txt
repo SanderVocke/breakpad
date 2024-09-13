@@ -16,7 +16,7 @@ option(BKPAD_UNITTESTS "Builds unit tests" ON)
 
 set(BREAKPAD_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-include_directories(${BREAKPAD_SRC_DIR} 
+include_directories(${BREAKPAD_SRC_DIR}
                     ${BREAKPAD_SRC_DIR}/common)
 
 set(BREAKPADCOMMON_LIB_SRCS
@@ -191,7 +191,7 @@ else()
             ${BREAKPAD_SRC_DIR}/common/mac/macho_reader.cc
             ${BREAKPAD_SRC_DIR}/common/mac/macho_reader.h)
 
-        list(APPEND BREAKPADCOMMON_UNITTESTS 
+        list(APPEND BREAKPADCOMMON_UNITTESTS
             ${BREAKPAD_SRC_DIR}/common/dwarf/dwarf2reader_lineinfo_unittest.cc
             ${BREAKPAD_SRC_DIR}/common/dwarf/dwarf2reader_splitfunctions_unittest.cc)
 
@@ -249,13 +249,13 @@ else()
             endif()
 
             message(STATUS "Retrieving linux-syscall-support repository")
-        
+
             FetchContent_Declare(lss
                 GIT_REPOSITORY https://chromium.googlesource.com/linux-syscall-support
                 SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/third_party/lss)
             FetchContent_MakeAvailable(lss)
         endif()
-    
+
         set(CLIENT_SRC_DIR ${BREAKPAD_SRC_DIR}/client/linux)
 
         list(APPEND BREAKPAD_LIB_SRCS
@@ -306,11 +306,11 @@ macro(breakpad_set_project_properties project)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         # Must use RTTI for dynamic_cast in case parent project sets -fno-rtti
         target_compile_options(${project} PRIVATE -frtti)
-        # Silence casting warnings 
+        # Silence casting warnings
         target_compile_options(${project} PRIVATE -Wno-c++11-narrowing)
     endif()
     if(MSVC)
-        # Silence casting warnings 
+        # Silence casting warnings
         target_compile_options(${project} PRIVATE /wd4146 /wd4267 /wd4244 /wd4312)
     endif()
 endmacro()
@@ -334,14 +334,14 @@ elseif(UNIX)
     set(BREAKPADCOMMON_LIBS ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-target_include_directories(breakpad_common PRIVATE 
+target_include_directories(breakpad_common PRIVATE
     ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(breakpad_common ${BREAKPADCOMMON_LIBS})
 
 add_library(breakpad ${BREAKPAD_LIB_SRCS})
 breakpad_set_project_properties(breakpad)
 
-target_include_directories(breakpad PUBLIC 
+target_include_directories(breakpad PUBLIC
     $<BUILD_INTERFACE:${BREAKPAD_SRC_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 target_link_libraries(breakpad breakpad_common)
@@ -352,6 +352,33 @@ if(APPLE)
             MACOSX_RPATH TRUE)
     endif()
 endif()
+
+set(HEADER_FILES)
+foreach(FILE ${BREAKPADCOMMON_LIB_SRCS})
+    if("${FILE}" MATCHES "\\.(h|hpp|hxx)$")
+        list(APPEND HEADER_FILES ${FILE})
+    endif()
+endforeach()
+foreach(FILE ${BREAKPAD_LIB_SRCS})
+    if("${FILE}" MATCHES "\\.(h|hpp|hxx)$")
+        list(APPEND HEADER_FILES ${FILE})
+    endif()
+endforeach()
+set(CMAKE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_PREFIX}/include")
+
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+install(
+    TARGETS breakpad
+    EXPORT "${TARGETS_EXPORT_NAME}"
+    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+    INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+)
+install(
+    FILES ${HEADER_FILES}
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
+)
 
 set(LIBDISASM_DIR ${BREAKPAD_SRC_DIR}/third_party/libdisasm)
 set(LIBDISASM_SRCS
@@ -491,19 +518,19 @@ breakpad_set_project_properties(processor_common)
 target_link_libraries(processor_common breakpad_common disasm)
 
 if(WIN32)
-    target_include_directories(processor_common PRIVATE 
+    target_include_directories(processor_common PRIVATE
         ${BREAKPAD_SRC_DIR}/third_party/windows/include)
 elseif(APPLE)
-    target_include_directories(processor_common PRIVATE 
+    target_include_directories(processor_common PRIVATE
         ${BREAKPAD_SRC_DIR}/third_party/mac/include)
 elseif(UNIX)
-    target_include_directories(processor_common PRIVATE 
+    target_include_directories(processor_common PRIVATE
         ${BREAKPAD_SRC_DIR}/third_party/linux/include)
 endif()
 
 if(BKPAD_DUMP_SYMS)
     if(WIN32)
-        set(DUMPSYMS_SRCS 
+        set(DUMPSYMS_SRCS
             ${BREAKPAD_SRC_DIR}/tools/windows/dump_syms/dump_syms.cc
             ${BREAKPAD_SRC_DIR}/third_party/getopt/getopt.c
             ${BREAKPAD_SRC_DIR}/third_party/getopt/getopt.h)
@@ -519,7 +546,7 @@ if(BKPAD_DUMP_SYMS)
     add_executable(dump_syms ${DUMPSYMS_SRCS})
     target_link_libraries(dump_syms breakpad_common ${DUMPSYMS_LIBS})
 
-    if(UNIX)   
+    if(UNIX)
         target_include_directories(dump_syms PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
         if (NOT APPLE)
             # Link against zlib for compressed section header support
@@ -608,7 +635,7 @@ if(BKPAD_UNITTESTS)
         target_link_libraries(${test} GTest::Main GMock::Main processor_common)
 
         if (MSVC)
-            set_target_properties(${test} PROPERTIES 
+            set_target_properties(${test} PROPERTIES
                 VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
         endif()
 
